@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BootScreen from '../components/BootScreen.astro';
+
+const sections = [
+  { href: '/projects', label: 'Projects', desc: 'Things I’ve built.' },
+  { href: '/blog', label: 'Writing', desc: 'Essays and notes.' },
+  { href: '/travel', label: 'Travel', desc: 'Photos and snippets.' },
+  { href: '/movies', label: 'Movies', desc: 'What I’ve watched.' },
+  { href: '/food', label: 'Food', desc: 'What I’ve eaten.' },
+  { href: '/music', label: 'Music', desc: 'What I’ve heard.' },
+];
+---
+
+<Layout title="Maeve">
+  <BootScreen />
+  <section>
+    <h1 class="text-3xl font-medium">Hi, I’m Maeve.</h1>
+    <p class="text-muted mt-3 max-w-prose">
+      This is my little corner of the internet — projects, writing, travel photos,
+      and running lists of what I’m watching, eating, and listening to.
+    </p>
+  </section>
+
+  <div class="grid sm:grid-cols-2 gap-4 mt-12">
+    {sections.map((s) => (
+      <a href={s.href} class="rounded-lg border border-border bg-card p-5 hover:border-accent transition-colors">
+        <h2 class="font-medium">{s.label}</h2>
+        <p class="text-sm text-muted mt-1">{s.desc}</p>
+      </a>
+    ))}
+  </div>
+</Layout>

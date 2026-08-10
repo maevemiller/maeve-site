@@ -1,0 +1,26 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import ReviewCard from '../../components/ReviewCard.astro';
+
+const entries = (await getCollection('music')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+
+<Layout title="Music — Maeve">
+  <h1 class="text-2xl font-medium mb-8">Music</h1>
+  <div class="grid gap-4">
+    {entries.map((entry) => (
+      <ReviewCard
+        href={`/music/${entry.id}`}
+        title={entry.data.title}
+        rating={entry.data.rating}
+        date={entry.data.date}
+        blurb={entry.data.blurb}
+        meta={entry.data.artist}
+        image={entry.data.image}
+      />
+    ))}
+  </div>
+</Layout>

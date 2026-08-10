@@ -1,0 +1,12 @@
+---
+interface Props {
+  rating: number;
+  max?: number;
+}
+
+const { rating, max = 5 } = Astro.props;
+---
+
+<span class="font-mono text-sm text-accent" aria-label={`${rating} out of ${max} stars`}>
+  {Array.from({ length: max }, (_, i) => (i < rating ? '★' : '☆')).join('')}
+</span>

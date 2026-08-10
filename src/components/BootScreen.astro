@@ -1,0 +1,61 @@
+---
+const lines = [
+  'MAEVE-OS v1.0',
+  '',
+  'Initializing...',
+  '[ok] Loading personality.sys',
+  '[ok] Loading taste.dat',
+  '[ok] Mounting /projects',
+  '[ok] Mounting /writing',
+  '[ok] Mounting /travel',
+  '[ok] Mounting /movies /food /music',
+  '',
+  'Welcome back.',
+];
+---
+
+<div
+  id="boot-screen"
+  class="fixed inset-0 z-50 bg-black text-[#4ade80] font-mono text-sm sm:text-base flex flex-col items-center justify-center p-8"
+>
+  <pre id="boot-text" class="whitespace-pre-wrap max-w-md w-full"></pre>
+  <p id="boot-hint" class="mt-8 text-xs opacity-0 transition-opacity duration-700 tracking-widest uppercase">
+    press any key to continue
+  </p>
+</div>
+
+<script define:vars={{ lines }}>
+  const overlay = document.getElementById('boot-screen');
+  const textEl = document.getElementById('boot-text');
+  const hintEl = document.getElementById('boot-hint');
+
+  const seen = sessionStorage.getItem('boot-seen');
+
+  function finish() {
+    sessionStorage.setItem('boot-seen', '1');
+    overlay.style.transition = 'opacity 500ms ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 500);
+    document.removeEventListener('keydown', finish);
+    document.removeEventListener('click', finish);
+  }
+
+  if (seen) {
+    overlay.remove();
+  } else {
+    let full = lines.join('\n');
+    let i = 0;
+    const typeInterval = setInterval(() => {
+      textEl.textContent = full.slice(0, i);
+      i++;
+      if (i > full.length) {
+        clearInterval(typeInterval);
+        hintEl.style.opacity = '1';
+        setTimeout(finish, 2500);
+      }
+    }, 18);
+
+    document.addEventListener('keydown', finish, { once: true });
+    document.addEventListener('click', finish, { once: true });
+  }
+</script>
