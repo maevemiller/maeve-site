@@ -1,61 +1,565 @@
 ---
-const lines = [
-  'MAEVE-OS v1.0',
-  '',
-  'Initializing...',
-  '[ok] Loading personality.sys',
-  '[ok] Loading taste.dat',
-  '[ok] Mounting /projects',
-  '[ok] Mounting /writing',
-  '[ok] Mounting /travel',
-  '[ok] Mounting /movies /food /music',
-  '',
-  'Welcome back.',
+const introLines = [
+  'MAEVE-VISION 99',
+  'booting...',
+  '[ok] personality.sys',
+  '[ok] taste.dat',
+  '[ok] loading memories.db',
+  '[ok] mounting /projects /writing',
+  '[ok] mounting /travel /movies /food /music',
 ];
+
+const ENTRY_WORD = 'ENTER';
+
+// Computer illustration, built as a coordinate-grid pixel-art shape (same
+// technique as the site's other icons): a cream all-in-one with a dark
+// outline, a recessed screen with its own bezel ring, and a base with a
+// speaker grille and a slot. The power button and status LED are plain
+// HTML/CSS circles layered on top (see below) rather than pixel-art
+// cells, since their color needs to change at runtime. 130x104 cell grid
+// (5:4, same ratio as the rig) so corners can be true circular arcs
+// instead of a coarse staircase, and lines render thin rather than blocky.
+type Cell = { r: number; c: number; color: string };
+type Coord = { r: number; c: number };
+
+// rounded rect with real circular-arc corners (radius in cells) — smooth
+// at this resolution, unlike a linear stair-step corner trim
+function pixelRoundedRect(r0: number, c0: number, r1: number, c1: number, radius: number): Coord[] {
+  const cells: Coord[] = [];
+  for (let r = r0; r <= r1; r++) {
+    for (let c = c0; c <= c1; c++) {
+      const nearTop = r - r0 < radius;
+      const nearBottom = r1 - r < radius;
+      const nearLeft = c - c0 < radius;
+      const nearRight = c1 - c < radius;
+      let cy: number | null = null;
+      let cx: number | null = null;
+      if (nearTop && nearLeft) { cy = r0 + radius - 0.5; cx = c0 + radius - 0.5; }
+      else if (nearTop && nearRight) { cy = r0 + radius - 0.5; cx = c1 - radius + 0.5; }
+      else if (nearBottom && nearLeft) { cy = r1 - radius + 0.5; cx = c0 + radius - 0.5; }
+      else if (nearBottom && nearRight) { cy = r1 - radius + 0.5; cx = c1 - radius + 0.5; }
+      if (cy !== null && cx !== null && Math.hypot(r - cy, c - cx) > radius) continue;
+      cells.push({ r, c });
+    }
+  }
+  return cells;
+}
+
+// the 1px ring of neighbor cells just outside a filled shape, within
+// explicit row/col bounds — NOT the filled shape plus its ring (that
+// would mean redrawing a full duplicate fill layer under every outlined
+// shape, which is how the first draft at this resolution ended up
+// rendering ~10k divs; only the ring itself needs to exist as its own
+// color, since the real fill is drawn separately on top anyway)
+function outlineRing(cells: Coord[], rMax: number, cMax: number): Coord[] {
+  const key = (r: number, c: number) => `${r},${c}`;
+  const seen = new Set(cells.map((c) => key(c.r, c.c)));
+  const ring: Coord[] = [];
+  for (const { r, c } of cells) {
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr <= rMax && nc >= 0 && nc <= cMax && !seen.has(key(nr, nc))) {
+        seen.add(key(nr, nc));
+        ring.push({ r: nr, c: nc });
+      }
+    }
+  }
+  return ring;
+}
+
+// 130x104 grid — a modest further bump in resolution (on top of the
+// earlier 1.5x) so the outline/grille lines, always exactly 1 cell
+// thick, read as a touch thinner still without changing the computer's
+// on-screen size. Kept small on purpose: since fill layers scale with
+// area, a bigger jump here costs DOM weight fast for a subtle effect.
+// Base is sized to nearly match the monitor's width, so it reads as two
+// stacked blocks rather than a monitor-on-a-pedestal.
+const R_MAX = 103;
+const C_MAX = 129;
+
+// palette pulled from the site's own tokens (warm cream, muted taupe,
+// soft accent green/orange) instead of a separate illustration-only set
+// — the previous bright teal screen and pure-black outline read as loud
+// and disconnected from the rest of the page
+const cream = '#fdfaf3';
+const creamLight = '#fffdf9';
+const creamShadow = '#ddd4c0';
+const outline = '#3a3025';
+const screenRecess = '#26251f';
+const dotSage = '#93ad95';
+
+const rawMonitor = pixelRoundedRect(3, 5, 78, 124, 13);
+const rawBase = pixelRoundedRect(83, 7, 101, 122, 9);
+// the screen recess stays sharp-cornered (radius 0) rather than rounded
+// like the shell — a smooth curve here, next to the grille/slot's
+// straight pixel lines, was the thing reading as "weird"/inconsistent
+const rawCutout = pixelRoundedRect(9, 12, 69, 117, 0);
+const cutoutKeys = new Set(rawCutout.map(({ r, c }) => `${r},${c}`));
+
+const shellCells: Cell[] = rawMonitor
+  .filter(({ r, c }) => !cutoutKeys.has(`${r},${c}`))
+  .map(({ r, c }) => {
+    let color = cream;
+    if (r <= 16) color = creamLight;
+    else if (r >= 65) color = creamShadow;
+    return { r, c, color };
+  });
+
+const baseCells: Cell[] = rawBase.map(({ r, c }) => ({ r, c, color: r >= 94 ? creamShadow : cream }));
+
+const outerOutline: Cell[] = outlineRing([...rawMonitor, ...rawBase], R_MAX, C_MAX).map((c) => ({
+  ...c,
+  color: outline,
+}));
+
+const screenOutline: Cell[] = outlineRing(rawCutout, R_MAX, C_MAX).map((c) => ({ ...c, color: outline }));
+
+// the HTML terminal now matches rawCutout's own bounding box exactly (no
+// inset), so it fills the full recess with no visible gap at the edges —
+// the previous 1-cell inset was leaving a sliver of the recess color
+// showing, which read as stray "whitespace" in the corners
+const screenBounds = { r0: 9, c0: 12, r1: 69, c1: 117 };
+const screenFill: Cell[] = rawCutout
+  .filter(
+    ({ r, c }) => r < screenBounds.r0 || r > screenBounds.r1 || c < screenBounds.c0 || c > screenBounds.c1
+  )
+  .map((c) => ({ ...c, color: screenRecess }));
+
+const grilleCells: Cell[] = [24, 31, 39, 47].flatMap((c) =>
+  [87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97].map((r) => ({ r, c, color: creamShadow }))
+);
+
+const slotRaw: Coord[] = [];
+for (let r = 90; r <= 94; r++) for (let c = 60; c <= 87; c++) slotRaw.push({ r, c });
+const slotOutline: Cell[] = outlineRing(slotRaw, R_MAX, C_MAX).map((c) => ({ ...c, color: outline }));
+const slotFill: Cell[] = slotRaw.map((c) => ({ ...c, color: creamLight }));
+
+const computerCells: Cell[] = [
+  ...outerOutline,
+  ...shellCells,
+  ...baseCells,
+  ...screenOutline,
+  ...screenFill,
+  ...grilleCells,
+  ...slotOutline,
+  ...slotFill,
+];
+
+// the HTML terminal's box matches the now-square-cornered rawCutout
+// bounds exactly, so it's a plain rectangle with no border-radius at
+// all — nothing to mismatch against the pixel-art edges
+const SCREEN = { left: 9.23, top: 8.65, width: 81.5, height: 58.7 };
 ---
 
 <div
   id="boot-screen"
-  class="fixed inset-0 z-50 bg-black text-[#4ade80] font-mono text-sm sm:text-base flex flex-col items-center justify-center p-8"
+  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+  style={`background-color: ${cream};`}
 >
-  <pre id="boot-text" class="whitespace-pre-wrap max-w-md w-full"></pre>
-  <p id="boot-hint" class="mt-8 text-xs opacity-0 transition-opacity duration-700 tracking-widest uppercase">
-    press any key to continue
-  </p>
+  <div
+    id="boot-rig"
+    class="relative"
+    style="width: min(95vw, calc(92vh * 1.25)); aspect-ratio: 500 / 400;"
+  >
+    <div
+      class="grid absolute inset-0"
+      style="grid-template-columns: repeat(130, 1fr); grid-template-rows: repeat(104, 1fr);"
+    >
+      {computerCells.map((cell) => (
+        <div style={`grid-row:${cell.r + 1}; grid-column:${cell.c + 1}; background-color: ${cell.color};`} />
+      ))}
+    </div>
+
+    <!-- the sage indicator dot doubles as the power button — sized and
+         positioned to exactly match the pixel-art dot underneath (same
+         center, same radius converted to rig-relative %, accounting for
+         the grid's non-square aspect) so the smooth CSS circle sits
+         flush over the blocky pixel dot with no visible seam. A larger
+         invisible ::before extends the actual click/tap target. -->
+    <button
+      id="power-button"
+      type="button"
+      aria-label="Turn on the computer"
+      class="absolute rounded-full"
+      style={`left: 73%; top: 85.5%; width: 4.7%; height: 5.9%; background: ${dotSage};`}
+    >
+      <svg class="power-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.5v7.5" stroke-width="1.9" />
+        <path d="M7 6.8a7 7 0 1 0 10 0" stroke-width="1.9" />
+      </svg>
+    </button>
+
+    <!-- status LED — starts red, turns green once powered on -->
+    <div
+      id="status-led"
+      class="absolute rounded-full pointer-events-none"
+      style="left: 88.7%; top: 86.8%; width: 2.6%; height: 3.3%;"
+    ></div>
+
+    <div
+      id="boot-screen-inner"
+      class="absolute overflow-hidden flex flex-col p-3 sm:p-5 cursor-text off"
+      style={`left: ${SCREEN.left}%; top: ${SCREEN.top}%; width: ${SCREEN.width}%; height: ${SCREEN.height}%; border: 2px solid ${outline}; background: rgba(26, 24, 19, 0.92);`}
+    >
+      <div id="static-fx" class="absolute inset-0 pointer-events-none">
+        <div class="boot-static pointer-events-none absolute inset-0"></div>
+      </div>
+
+      <pre
+        id="boot-text"
+        class="pixel-font text-[8px] sm:text-[13px] leading-[1.45] whitespace-pre-wrap flex-none relative"
+        style="color: #7fc99a;"></pre>
+      <div
+        id="boot-bar"
+        class="pixel-font text-[8px] sm:text-[13px] leading-[1.45] mt-1.5 sm:mt-2 flex-none relative"
+        style="color: #7fc99a;"
+      ></div>
+
+      <div id="boot-prompt" class="pixel-font text-[8px] sm:text-[13px] leading-[1.45] mt-auto flex-none opacity-0 relative" style="color: #7fc99a;">
+        <p>TYPE "{ENTRY_WORD}" AND PRESS RETURN</p>
+        <p>
+          &gt; <span id="prompt-display"></span><span id="prompt-cursor">_</span>
+        </p>
+        <p id="prompt-error" class="opacity-0" style="color: #c9906a;">INVALID COMMAND — TRY AGAIN</p>
+      </div>
+
+      <input
+        id="prompt-input"
+        type="text"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        class="absolute pointer-events-none"
+        style="top: 50%; left: 50%; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0;"
+      />
+
+      <div class="boot-scanlines pointer-events-none absolute inset-0"></div>
+    </div>
+  </div>
 </div>
 
-<script define:vars={{ lines }}>
-  const overlay = document.getElementById('boot-screen');
-  const textEl = document.getElementById('boot-text');
-  const hintEl = document.getElementById('boot-hint');
-
-  const seen = sessionStorage.getItem('boot-seen');
-
-  function finish() {
-    sessionStorage.setItem('boot-seen', '1');
-    overlay.style.transition = 'opacity 500ms ease';
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.remove(), 500);
-    document.removeEventListener('keydown', finish);
-    document.removeEventListener('click', finish);
+<style>
+  /* powered-off state: no static, no scanlines, a flatter/darker screen —
+     the pixel-art bezel is still visible, but the screen itself reads as
+     inert until the power button is clicked */
+  #boot-screen-inner {
+    transition: background-color 400ms ease;
   }
 
-  if (seen) {
-    overlay.remove();
-  } else {
-    let full = lines.join('\n');
+  #boot-screen-inner.off {
+    background: rgba(8, 7, 6, 0.94) !important;
+  }
+
+  #static-fx {
+    opacity: 1;
+    transition: opacity 300ms ease;
+  }
+
+  #boot-screen-inner.off #static-fx {
+    opacity: 0;
+  }
+
+  .boot-scanlines {
+    transition: opacity 300ms ease;
+  }
+
+  #boot-screen-inner.off .boot-scanlines {
+    opacity: 0;
+  }
+
+  @keyframes crt-flash {
+    0% { filter: brightness(1); }
+    10% { filter: brightness(2.6); }
+    24% { filter: brightness(0.8); }
+    40% { filter: brightness(1.5); }
+    100% { filter: brightness(1); }
+  }
+
+  #boot-screen-inner.flash {
+    animation: crt-flash 950ms ease-out;
+  }
+
+  /* the button's own box IS the visible circle (same size/position as the
+     pixel-art dot it sits over), so the pulse ring — built from the
+     button's own box-shadow — is naturally the same true circle, with no
+     separate pseudo-element shape to fall out of alignment */
+  #power-button {
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    box-shadow: 0 0 0 0 rgba(147, 173, 149, 0.55);
+    animation: power-pulse 1.8s ease-out infinite;
+  }
+
+  /* invisible hit-slop — the visual dot stays small and precise, but the
+     actual clickable area is comfortably larger */
+  #power-button::before {
+    content: '';
+    position: absolute;
+    inset: -70%;
+  }
+
+  .power-icon {
+    position: absolute;
+    inset: 26%;
+    pointer-events: none;
+    fill: none;
+    stroke: #4f6355;
+    stroke-linecap: round;
+    opacity: 0.75;
+  }
+
+  #power-button.pressed {
+    animation: none;
+    box-shadow: none;
+  }
+
+  #power-button:disabled {
+    cursor: default;
+  }
+
+  @keyframes power-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(147, 173, 149, 0.55); }
+    70% { box-shadow: 0 0 0 9px rgba(147, 173, 149, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(147, 173, 149, 0); }
+  }
+
+  #status-led {
+    background: #c1665a;
+    transition: background-color 500ms ease;
+  }
+
+  #status-led.on {
+    background: #93ad95;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #power-button {
+      animation: none;
+    }
+    #boot-screen-inner.flash {
+      animation: none;
+    }
+  }
+
+  .boot-static {
+    opacity: 0.004;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    filter: grayscale(1);
+    animation: static-flicker 0.6s steps(2) infinite;
+  }
+
+  @keyframes static-flicker {
+    0%, 100% { opacity: 0.002; }
+    50% { opacity: 0.008; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .boot-static {
+      animation: none;
+      opacity: 0.004;
+    }
+  }
+
+  .boot-scanlines {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  #prompt-cursor {
+    animation: bob 1s steps(2) infinite;
+  }
+
+  @keyframes bob {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  #boot-prompt.visible {
+    opacity: 1;
+    transition: opacity 300ms ease;
+  }
+
+  #prompt-error.visible {
+    opacity: 1;
+    transition: opacity 200ms ease;
+  }
+
+  #boot-rig {
+    transition: opacity 550ms ease, transform 550ms ease;
+  }
+
+  #boot-screen.leaving #boot-rig {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+
+  #boot-screen {
+    transition: opacity 550ms ease 120ms;
+  }
+
+  #boot-screen.leaving {
+    opacity: 0;
+  }
+</style>
+
+<script define:vars={{ introLines, ENTRY_WORD }}>
+  const overlay = document.getElementById('boot-screen');
+  const inner = document.getElementById('boot-screen-inner');
+  const textEl = document.getElementById('boot-text');
+  const barEl = document.getElementById('boot-bar');
+  const promptEl = document.getElementById('boot-prompt');
+  const promptDisplay = document.getElementById('prompt-display');
+  const promptError = document.getElementById('prompt-error');
+  const input = document.getElementById('prompt-input');
+
+  const powerButton = document.getElementById('power-button');
+  const statusLed = document.getElementById('status-led');
+
+  const seen = sessionStorage.getItem('boot-seen');
+  let stage = 'off'; // off -> typing -> bar -> prompt
+  let attempts = 0;
+  let poweredOn = false;
+
+  function finish() {
+    if (overlay.classList.contains('leaving')) return;
+    sessionStorage.setItem('boot-seen', '1');
+    overlay.classList.add('leaving');
+    setTimeout(() => overlay.remove(), 700);
+  }
+
+  function renderBar(pct) {
+    const width = 14;
+    const filled = Math.round((pct / 100) * width);
+    return `[${'#'.repeat(filled)}${'-'.repeat(width - filled)}] ${String(pct).padStart(3, ' ')}%`;
+  }
+
+  function runLoadingBar(onDone) {
+    let pct = 0;
+    const step = setInterval(() => {
+      pct += 4;
+      if (pct >= 100) {
+        pct = 100;
+        barEl.textContent = renderBar(pct);
+        clearInterval(step);
+        setTimeout(onDone, 650);
+        return;
+      }
+      barEl.textContent = renderBar(pct);
+    }, 125);
+  }
+
+  function enterPromptStage() {
+    stage = 'prompt';
+    promptEl.classList.add('visible');
+    input.focus();
+  }
+
+  function skipToPrompt() {
+    if (stage === 'prompt') return;
+    stage = 'prompt';
+    textEl.textContent = introLines.join('\n');
+    barEl.textContent = renderBar(100);
+    enterPromptStage();
+  }
+
+  function checkAnswer() {
+    const val = input.value.trim().toUpperCase();
+    if (val === ENTRY_WORD) {
+      finish();
+    } else {
+      attempts++;
+      promptError.classList.add('visible');
+      input.value = '';
+      promptDisplay.textContent = '';
+      if (attempts >= 3) {
+        setTimeout(finish, 600);
+      }
+    }
+  }
+
+  function startTyping() {
+    stage = 'typing';
+    const full = introLines.join('\n');
     let i = 0;
     const typeInterval = setInterval(() => {
       textEl.textContent = full.slice(0, i);
       i++;
       if (i > full.length) {
         clearInterval(typeInterval);
-        hintEl.style.opacity = '1';
-        setTimeout(finish, 2500);
+        stage = 'bar';
+        setTimeout(() => {
+          runLoadingBar(() => enterPromptStage());
+        }, 550);
       }
-    }, 18);
+    }, 38);
+  }
 
-    document.addEventListener('keydown', finish, { once: true });
-    document.addEventListener('click', finish, { once: true });
+  function powerOn() {
+    if (poweredOn) return;
+    poweredOn = true;
+
+    powerButton.classList.add('pressed');
+    powerButton.disabled = true;
+
+    // a slower, more deliberate power-up: a short pause (capacitors
+    // charging), then the CRT flash/flicker as the shell lights up and
+    // the status LED confirms power, then another pause before the
+    // boot text actually starts typing
+    const FLASH_DELAY = 250;
+    const FLASH_DURATION = 950;
+    const TYPING_DELAY = 500;
+
+    setTimeout(() => {
+      inner.classList.add('flash');
+      inner.classList.remove('off');
+      statusLed.classList.add('on');
+    }, FLASH_DELAY);
+
+    setTimeout(() => {
+      inner.classList.remove('flash');
+    }, FLASH_DELAY + FLASH_DURATION);
+
+    setTimeout(() => {
+      startTyping();
+    }, FLASH_DELAY + FLASH_DURATION + TYPING_DELAY);
+
+    // now that the computer is on, a keypress anywhere skips straight
+    // to the prompt (registered fresh here so an impatient keypress
+    // before power-on can't burn this listener's one-shot early)
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (stage !== 'prompt') skipToPrompt();
+      },
+      { once: true }
+    );
+  }
+
+  if (seen) {
+    overlay.remove();
+  } else {
+    powerButton.addEventListener('click', powerOn);
+
+    inner.addEventListener('click', () => {
+      if (!poweredOn) return;
+      if (stage === 'prompt') input.focus();
+      else skipToPrompt();
+    });
+
+    input.addEventListener('input', () => {
+      promptDisplay.textContent = input.value.toUpperCase();
+      promptError.classList.remove('visible');
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
   }
 </script>

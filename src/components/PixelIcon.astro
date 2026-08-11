@@ -1,0 +1,36 @@
+---
+interface Props {
+  cells: { r: number; c: number; color: string }[];
+  size?: number;
+  gridSize?: number;
+  animate?: boolean;
+}
+
+const { cells, size = 28, gridSize = 12, animate = true } = Astro.props;
+---
+
+<div
+  class={`pixel-icon grid shrink-0 ${animate ? 'is-animated' : ''}`}
+  style={`grid-template-columns: repeat(${gridSize}, 1fr); grid-template-rows: repeat(${gridSize}, 1fr); width: ${size}px; height: ${size}px;`}
+>
+  {cells.map((cell) => (
+    <div style={`grid-row:${cell.r + 1}; grid-column:${cell.c + 1}; background-color: ${cell.color};`} />
+  ))}
+</div>
+
+<style>
+  .pixel-icon.is-animated {
+    animation: idle-bob 3.6s ease-in-out infinite;
+  }
+
+  @keyframes idle-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pixel-icon {
+      animation: none;
+    }
+  }
+</style>

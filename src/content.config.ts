@@ -76,4 +76,29 @@ const travel = defineCollection({
     }),
 });
 
-export const collections = { projects, blog, movies, food, music, travel };
+const vibes = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './content/vibes' }),
+  schema: z.object({
+    category: z.string(),
+    items: z.array(z.string()).min(1).max(5),
+    order: z.number().default(0),
+  }),
+});
+
+const now = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './content/now' }),
+  schema: z.object({
+    updated: z.coerce.date(),
+    items: z
+      .array(
+        z.object({
+          label: z.string(),
+          value: z.string(),
+          icon: z.enum(['reading', 'listening', 'learning']),
+        })
+      )
+      .min(1),
+  }),
+});
+
+export const collections = { projects, blog, movies, food, music, travel, vibes, now };

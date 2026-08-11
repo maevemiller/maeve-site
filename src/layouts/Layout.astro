@@ -7,16 +7,6 @@ interface Props {
 }
 
 const { title = 'Maeve', description = "Maeve's personal site" } = Astro.props;
-
-const nav = [
-  { href: '/', label: 'Home' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/blog', label: 'Writing' },
-  { href: '/travel', label: 'Travel' },
-  { href: '/movies', label: 'Movies' },
-  { href: '/food', label: 'Food' },
-  { href: '/music', label: 'Music' },
-];
 ---
 
 <!doctype html>
@@ -27,36 +17,34 @@ const nav = [
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <script is:inline>
+      const stored = localStorage.getItem('theme');
+      if (stored) document.documentElement.dataset.theme = stored;
+    </script>
   </head>
   <body class="min-h-screen flex flex-col">
-    <header class="border-b border-border">
-      <div class="max-w-3xl mx-auto px-6 py-5 flex flex-wrap items-center justify-between gap-4">
-        <a href="/" class="font-mono text-sm tracking-widest uppercase text-accent">maeve.world</a>
-        <nav class="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-          {nav.slice(1).map((item) => (
-            <a href={item.href} class="text-muted hover:text-fg transition-colors">{item.label}</a>
-          ))}
-        </nav>
-      </div>
-    </header>
+    <div class="grain"></div>
 
-    <main class="flex-1 max-w-3xl w-full mx-auto px-6 py-12">
+    <main class="flex-1 max-w-3xl w-full mx-auto px-6 py-10">
       <slot />
     </main>
 
-    <footer class="border-t border-border">
-      <div class="max-w-3xl mx-auto px-6 py-6 text-xs text-muted font-mono flex items-center justify-between">
-        <span>&copy; {new Date().getFullYear()} Maeve</span>
-        <button id="replay-boot" class="hover:text-accent transition-colors" type="button">[ replay boot ]</button>
-      </div>
-    </footer>
-
     <script>
-      const btn = document.getElementById('replay-boot');
-      btn?.addEventListener('click', () => {
-        sessionStorage.removeItem('boot-seen');
-        window.location.href = '/';
-      });
+      const revealEls = document.querySelectorAll('.reveal');
+      if (revealEls.length) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+              }
+            }
+          },
+          { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+        );
+        revealEls.forEach((el) => observer.observe(el));
+      }
     </script>
   </body>
 </html>

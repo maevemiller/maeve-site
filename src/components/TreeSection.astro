@@ -1,0 +1,61 @@
+---
+import PixelIcon from './PixelIcon.astro';
+
+interface Item {
+  name: string;
+  href: string;
+  desc: string;
+  external?: boolean;
+}
+
+interface Props {
+  icon: { r: number; c: number; color: string }[];
+  iconGridSize?: number;
+  iconSize?: number;
+  title: string;
+  items: Item[];
+}
+
+const { icon, iconGridSize = 12, iconSize = 28, title, items } = Astro.props;
+
+const cursorCells: { r: number; c: number }[] = [];
+for (let r = 0; r <= 6; r++) {
+  for (let c = 0; c <= r; c++) cursorCells.push({ r, c });
+}
+cursorCells.push({ r: 7, c: 2 }, { r: 7, c: 3 }, { r: 8, c: 3 }, { r: 8, c: 4 });
+---
+
+<div class="flex items-center gap-3 mb-6">
+  <span class="inline-flex items-center justify-center shrink-0" style="width: 28px; height: 28px;">
+    <PixelIcon cells={icon} gridSize={iconGridSize} size={iconSize} />
+  </span>
+  <h2 class="title-font text-3xl">/{title}</h2>
+</div>
+<div class="font-mono text-sm">
+  {items.map((item, i) => (
+    <a
+      href={item.href}
+      target={item.external ? '_blank' : undefined}
+      rel={item.external ? 'noopener' : undefined}
+      class="tree-row group relative flex items-baseline gap-1 pl-7 py-1 hover:text-accent transition-colors"
+    >
+      <span
+        class="cursor-icon absolute left-0 top-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+        style="grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(9, 1fr); width: 12px; height: 13px;"
+      >
+        {cursorCells.map((cell) => (
+          <span style={`grid-row:${cell.r + 1}; grid-column:${cell.c + 1}; background-color: var(--color-fg);`} />
+        ))}
+      </span>
+      <span class="text-muted">{i === items.length - 1 ? '└──' : '├──'}</span>
+      <span class="inline-block w-24">{item.name}{item.external ? '' : '/'}</span>
+      <span class="text-muted">&larr; {item.desc}</span>
+    </a>
+  ))}
+</div>
+
+<style>
+  .cursor-icon {
+    display: grid;
+  }
+</style>
