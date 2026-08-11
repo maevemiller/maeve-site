@@ -9,23 +9,26 @@ const entries = (await getCollection('travel')).sort(
 ---
 
 <Layout title="Travel — Maeve">
-  <h1 class="text-2xl font-medium mb-8">Travel</h1>
-  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+  <a href="/" class="label hover:text-accent transition-colors">&larr; maeve.world</a>
+  <h1 class="display text-3xl mt-4 mb-10">Travel</h1>
+  <div class="reveal grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
     {entries.map((entry) => (
-      <a href={`/travel/${entry.id}`} class="group block">
-        <div class="aspect-square rounded-lg overflow-hidden bg-card border border-border">
+      <a href={`/travel/${entry.id}`} class="group block bg-bg">
+        <div class="aspect-square overflow-hidden bg-card">
           {entry.data.photo && (
             <Image
               src={entry.data.photo}
               alt={entry.data.title}
               width={400}
               height={400}
-              class="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+              class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-500"
             />
           )}
         </div>
-        <p class="text-sm font-medium mt-2">{entry.data.title}</p>
-        <p class="text-xs text-muted">{entry.data.location}</p>
+        <div class="p-3">
+          <p class="text-sm display group-hover:text-accent transition-colors">{entry.data.title}</p>
+          <p class="label mt-1">{entry.data.location}</p>
+        </div>
       </a>
     ))}
   </div>

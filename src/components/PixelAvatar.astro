@@ -1,0 +1,58 @@
+---
+import { Image } from 'astro:assets';
+import avatar from '../assets/avatar.png';
+---
+
+<div class="flex flex-col items-start gap-3" id="avatar-wrap">
+  <Image
+    id="avatar-img"
+    src={avatar}
+    alt="A small pixel-art portrait of Maeve"
+    width={108}
+    height={164}
+    class="block shrink-0"
+    style="width: 58px; height: 88px;"
+  />
+
+  <h1 class="title-font text-6xl sm:text-7xl">Hi, I'm Maeve</h1>
+</div>
+
+<style>
+  #avatar-img {
+    animation: idle-bob 3.6s ease-in-out infinite;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+  }
+
+  @keyframes idle-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  #avatar-wrap:hover #avatar-img,
+  #avatar-wrap.greet #avatar-img {
+    animation: idle-bob 3.6s ease-in-out infinite, nod 500ms ease-in-out;
+  }
+
+  @keyframes nod {
+    0%, 100% { transform: rotate(0deg); }
+    30% { transform: rotate(-6deg); }
+    60% { transform: rotate(5deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #avatar-img,
+    #avatar-wrap:hover #avatar-img {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  const wrap = document.getElementById('avatar-wrap');
+
+  wrap?.addEventListener('mouseenter', () => {
+    wrap.classList.add('greet');
+    setTimeout(() => wrap.classList.remove('greet'), 500);
+  });
+</script>

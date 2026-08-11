@@ -1,33 +1,199 @@
 ---
+import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import BootScreen from '../components/BootScreen.astro';
+import PixelAvatar from '../components/PixelAvatar.astro';
+import TreeSection from '../components/TreeSection.astro';
+import PixelIcon from '../components/PixelIcon.astro';
 
-const sections = [
-  { href: '/projects', label: 'Projects', desc: 'Things I’ve built.' },
-  { href: '/blog', label: 'Writing', desc: 'Essays and notes.' },
-  { href: '/travel', label: 'Travel', desc: 'Photos and snippets.' },
-  { href: '/movies', label: 'Movies', desc: 'What I’ve watched.' },
-  { href: '/food', label: 'Food', desc: 'What I’ve eaten.' },
-  { href: '/music', label: 'Music', desc: 'What I’ve heard.' },
+const now = (await getCollection('now'))[0];
+const nowUpdated = now?.data.updated.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+
+const contact = [
+  { name: 'github', href: 'https://github.com/maevemiller', desc: 'code', external: true },
+  { name: 'email', href: 'mailto:you@example.com', desc: 'say hi', external: true },
+  { name: 'twitter', href: 'https://twitter.com/yourhandle', desc: 'shorter thoughts', external: true },
 ];
+
+const consuming = [
+  { name: 'travel', href: '/travel', desc: 'photos & snippets from trips' },
+  { name: 'movies', href: '/movies', desc: "what I've watched, rated" },
+  { name: 'food', href: '/food', desc: "what I've eaten, rated" },
+  { name: 'music', href: '/music', desc: "what I've listened to, rated" },
+];
+
+const creating = [
+  { name: 'projects', href: '/projects', desc: "things I've built" },
+  { name: 'writing', href: '/blog', desc: 'essays & notes' },
+];
+
+// icon grids — built as {row, col} coordinates, not hand-guessed raster art.
+// Every finished icon is run through shiftLeft() so its leftmost filled
+// pixel sits at column 0 — otherwise an organic/circular shape (which
+// rarely touches the edge of its own bounding box) reads as indented
+// next to something edge-to-edge like the avatar photo.
+type Cell = { r: number; c: number; color: string };
+
+function shiftLeft(cells: Cell[]): Cell[] {
+  const minC = Math.min(...cells.map((c) => c.c));
+  return cells.map((c) => ({ ...c, c: c.c - minC }));
+}
+
+// grows a shape by 1px in every direction — used to draw a dark outline
+// behind a fill so the shape reads as a defined object, not a flat smudge
+function dilate(cells: { r: number; c: number }[], gridSize = 12): { r: number; c: number }[] {
+  const key = (r: number, c: number) => `${r},${c}`;
+  const seen = new Set(cells.map((c) => key(c.r, c.c)));
+  const out: { r: number; c: number }[] = [...cells];
+  for (const { r, c } of cells) {
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize && !seen.has(key(nr, nc))) {
+        seen.add(key(nr, nc));
+        out.push({ r: nr, c: nc });
+      }
+    }
+  }
+  return out;
+}
+
+// envelope: a rectangle and a V-shaped flap line. Six passes on a phone
+// were enough — a phone's silhouette (disconnected handset + dial/keypad
+// detail) just doesn't survive 12x12. An envelope is two flat geometric
+// shapes, no circles, no separate floating pieces — much lower-risk, and
+// arguably a more literal fit for "contact" than a phone was anyway.
+const lightBlue = '#a9d3ec';
+const deepBlue = '#4a7ba6';
+
+const envelopeBody: { r: number; c: number }[] = [];
+for (let r = 2; r <= 9; r++) for (let c = 0; c <= 11; c++) envelopeBody.push({ r, c });
+const envelopeOutline = dilate(envelopeBody);
+
+const flapLeft = [{ r: 2, c: 0 }, { r: 3, c: 1 }, { r: 3, c: 2 }, { r: 4, c: 3 }, { r: 5, c: 4 }];
+const flapRight = [{ r: 2, c: 11 }, { r: 3, c: 10 }, { r: 3, c: 9 }, { r: 4, c: 8 }, { r: 5, c: 7 }];
+const flap = [...flapLeft, ...flapRight, { r: 6, c: 5 }, { r: 6, c: 6 }];
+
+const envelopeIcon = shiftLeft([
+  ...envelopeOutline.map((c) => ({ ...c, color: deepBlue })),
+  ...envelopeBody.map((c) => ({ ...c, color: lightBlue })),
+  ...flap.map((c) => ({ ...c, color: deepBlue })),
+]);
+
+// book: cover + spine + a little bookmark ribbon — kept in the same
+// orange family as the apple instead of an unrelated maroon, so the
+// icon set reads as one coordinated palette rather than a grab-bag
+const bookCoverColor = 'var(--color-accent-2)';
+const bookSpineColor = '#8a3d1f';
+const bookCover: { r: number; c: number }[] = [];
+for (let r = 2; r <= 10; r++) for (let c = 2; c <= 9; c++) bookCover.push({ r, c });
+const bookSpine: { r: number; c: number }[] = [];
+for (let r = 2; r <= 10; r++) bookSpine.push({ r, c: 5 });
+const bookmark = [{ r: 2, c: 7 }, { r: 3, c: 7 }, { r: 4, c: 7 }];
+
+const bookIcon = shiftLeft([
+  ...bookCover.map((c) => ({ ...c, color: bookCoverColor })),
+  ...bookSpine.map((c) => ({ ...c, color: bookSpineColor })),
+  ...bookmark.map((c) => ({ ...c, color: 'var(--color-accent)' })),
+]);
+
+// eighth note: notehead + stem + small flag
+const noteCells = [
+  ...[{ r: 8, c: 3 }, { r: 8, c: 4 }, { r: 9, c: 3 }, { r: 9, c: 4 }],
+  ...[3, 4, 5, 6, 7].map((r) => ({ r, c: 5 })),
+  { r: 3, c: 6 },
+  { r: 4, c: 6 },
+];
+const noteIcon = shiftLeft(noteCells.map((c) => ({ ...c, color: 'var(--color-accent)' })));
+
+// lightbulb: bulb + base + a couple of sparkle rays — muted gold instead
+// of a saturated yellow, so it sits in the same warm family as the apple
+// and book rather than adding a fourth clashing hue
+const bulbGold = '#e0a23f';
+const bulbBase: { r: number; c: number }[] = [];
+for (let r = 0; r < 12; r++) {
+  for (let c = 0; c < 12; c++) {
+    if (Math.sqrt((c - 5.5) ** 2 + (r - 4) ** 2) <= 3.0) bulbBase.push({ r, c });
+  }
+}
+const bulbSocket: { r: number; c: number }[] = [];
+for (let r = 7; r <= 9; r++) for (let c = 4; c <= 7; c++) bulbSocket.push({ r, c });
+const bulbRays = [{ r: 0, c: 2 }, { r: 0, c: 9 }];
+
+const bulbIcon = shiftLeft([
+  ...bulbBase.map((c) => ({ ...c, color: bulbGold })),
+  ...bulbSocket.map((c) => ({ ...c, color: 'var(--color-muted)' })),
+  ...bulbRays.map((c) => ({ ...c, color: bulbGold })),
+]);
+
+const nowIcons: Record<string, Cell[]> = {
+  reading: bookIcon,
+  listening: noteIcon,
+  learning: bulbIcon,
+};
+
+// apple: two overlapping circles (bouts of the body) plus stem + leaf
+const appleBody: { r: number; c: number }[] = [];
+for (let r = 0; r < 12; r++) {
+  for (let c = 0; c < 12; c++) {
+    const dist = Math.sqrt((c - 5.5) ** 2 + (r - 6.7) ** 2);
+    if (dist <= 4.3) appleBody.push({ r, c });
+  }
+}
+const appleIcon = shiftLeft([
+  ...appleBody.map((c) => ({ ...c, color: 'var(--color-accent-2)' })),
+  ...[{ r: 2, c: 5 }, { r: 3, c: 5 }].map((c) => ({ ...c, color: 'var(--color-fg)' })),
+  ...[{ r: 1, c: 7 }, { r: 2, c: 6 }].map((c) => ({ ...c, color: 'var(--color-accent)' })),
+]);
+
+const seedlingIcon = shiftLeft([
+  ...[4, 5, 6, 7, 8].map((c) => ({ r: 10, c, color: 'var(--color-fg)' })),
+  ...[7, 8, 9].map((r) => ({ r, c: 6, color: 'var(--color-accent)' })),
+  ...[{ r: 6, c: 5 }, { r: 6, c: 4 }, { r: 5, c: 4 }, { r: 6, c: 7 }, { r: 6, c: 8 }, { r: 5, c: 8 }].map((c) => ({
+    ...c,
+    color: 'var(--color-accent)',
+  })),
+]);
 ---
 
 <Layout title="Maeve">
   <BootScreen />
-  <section>
-    <h1 class="text-3xl font-medium">Hi, I’m Maeve.</h1>
-    <p class="text-muted mt-3 max-w-prose">
-      This is my little corner of the internet — projects, writing, travel photos,
-      and running lists of what I’m watching, eating, and listening to.
+
+  <section class="reveal">
+    <PixelAvatar />
+    <p class="text-muted font-light mt-5 max-w-prose leading-relaxed">
+      This is my little corner of the internet — what I take in, and what I make.
     </p>
   </section>
 
-  <div class="grid sm:grid-cols-2 gap-4 mt-12">
-    {sections.map((s) => (
-      <a href={s.href} class="rounded-lg border border-border bg-card p-5 hover:border-accent transition-colors">
-        <h2 class="font-medium">{s.label}</h2>
-        <p class="text-sm text-muted mt-1">{s.desc}</p>
-      </a>
-    ))}
-  </div>
+  <section class="reveal mt-16">
+    <TreeSection icon={envelopeIcon} iconSize={24} title="CONNECTING" items={contact} />
+  </section>
+
+  <section class="reveal mt-12 pt-8 border-t border-border">
+    <TreeSection icon={appleIcon} title="CONSUMING" items={consuming} />
+  </section>
+
+  <section class="reveal mt-12 pt-8 border-t border-border">
+    <TreeSection icon={seedlingIcon} title="CREATING" items={creating} />
+  </section>
+
+  {now && (
+    <section class="reveal mt-14 pt-6 border-t border-border pb-4">
+      <p class="label mb-5">as of {nowUpdated}, i've been into</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-6">
+        {now.data.items.map((item) => (
+          <div class="flex items-center gap-3">
+            <PixelIcon cells={nowIcons[item.icon]} size={22} />
+            <p class="text-sm text-muted font-light">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
 </Layout>

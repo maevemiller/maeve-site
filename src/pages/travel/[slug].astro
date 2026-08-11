@@ -13,14 +13,14 @@ const { Content } = await render(entry);
 ---
 
 <Layout title={`${entry.data.title} — Maeve`}>
-  <a href="/travel" class="text-sm text-muted hover:text-fg">&larr; Travel</a>
-  <h1 class="text-2xl font-medium mt-4">{entry.data.title}</h1>
-  <p class="text-sm text-muted mt-1">{entry.data.location}</p>
-  <p class="text-xs font-mono text-muted mt-2">
-    {entry.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+  <a href="/travel" class="label hover:text-fg transition-colors">&larr; Travel</a>
+  <h1 class="display text-3xl mt-5">{entry.data.title}</h1>
+  <p class="label mt-2">{entry.data.location}</p>
+  <p class="label mt-1">
+    {entry.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
   </p>
   {entry.data.photo && (
-    <Image src={entry.data.photo} alt={entry.data.title} width={800} class="mt-6 rounded-lg w-full object-cover" />
+    <Image src={entry.data.photo} alt={entry.data.title} width={800} class="mt-8 w-full object-cover" />
   )}
   <article class="prose prose-neutral dark:prose-invert mt-8 max-w-none">
     <Content />

@@ -12,10 +12,10 @@ const { Content } = await render(entry);
 ---
 
 <Layout title={`${entry.data.title} — Maeve`}>
-  <a href="/blog" class="text-sm text-muted hover:text-fg">&larr; Writing</a>
-  <h1 class="text-2xl font-medium mt-4">{entry.data.title}</h1>
-  <p class="text-xs font-mono text-muted mt-2">
-    {entry.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+  <a href="/blog" class="label hover:text-fg transition-colors">&larr; Writing</a>
+  <h1 class="display text-3xl mt-5">{entry.data.title}</h1>
+  <p class="label mt-3">
+    {entry.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
   </p>
   <article class="prose prose-neutral dark:prose-invert mt-8 max-w-none">
     <Content />

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Press+Start+2P&family=VT323&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -5,27 +6,107 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --color-bg: #faf9f4;
-  --color-fg: #18181b;
-  --color-muted: #6b6b70;
-  --color-card: #ffffff;
-  --color-border: #e5e3db;
+  --color-bg: #fdfaf3;
+  --color-fg: #0f0f10;
+  --color-muted: #6f6f74;
+  --color-card: #fdfaf3;
+  --color-border: #d9d7d0;
   --color-accent: #0a7d4b;
+  --color-accent-2: #e8532f;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0c0c0e;
-    --color-fg: #ececec;
-    --color-muted: #98989e;
-    --color-card: #17171a;
-    --color-border: #28282c;
+  :root:not([data-theme='light']) {
+    --color-bg: #0a0a0b;
+    --color-fg: #f4f4f3;
+    --color-muted: #8f8f94;
+    --color-card: #0a0a0b;
+    --color-border: #2a2a2c;
     --color-accent: #4ade80;
+    --color-accent-2: #ff7a54;
   }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0a0a0b;
+  --color-fg: #f4f4f3;
+  --color-muted: #8f8f94;
+  --color-card: #0a0a0b;
+  --color-border: #2a2a2c;
+  --color-accent: #4ade80;
+  --color-accent-2: #ff7a54;
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans);
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+/* faint tactile grain, sits above bg, below content */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@layer utilities {
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .display {
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .pixel-font {
+    font-family: 'Press Start 2P', var(--font-mono), monospace;
+  }
+
+  /* VT323 — closest reliable web font to the Apple II ROM bitmap
+     character set; a real dump of that font isn't on a CDN we can
+     trust to stay up, this is the standard stand-in for it. */
+  .title-font {
+    font-family: 'VT323', var(--font-mono), monospace;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+
+  .idx {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 700ms ease, transform 700ms ease;
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
