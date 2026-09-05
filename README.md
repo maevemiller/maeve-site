@@ -1,43 +1,40 @@
-# Astro Starter Kit: Minimal
+# maeve-site
 
-```sh
-npm create astro@latest -- --template minimal
-```
+Personal site built with Astro + Tailwind, backed by content collections for blog, food,
+movies, music, now, projects, travel, and vibes.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Commands
 
-## 🚀 Project Structure
+| Command                   | Action                                        |
+| :------------------------ | :--------------------------------------------- |
+| `npm install`              | Installs dependencies                          |
+| `npm run dev`               | Starts local dev server at `localhost:4321`    |
+| `npm run build`             | Build the production site to `./dist/`         |
+| `npm run preview`           | Preview the build locally before deploying     |
+| `npm run sync-vault`        | One-shot sync from the Obsidian vault's `publish/` folder into `content/` |
+| `npm run sync-vault:watch`  | Keep syncing as notes in the vault change      |
 
-Inside of your Astro project, you'll see the following folders and files:
+## Publishing from Obsidian
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+Content is authored in the vault at
+`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/thought/publish/`, under a subfolder
+per collection (`blog/`, `food/`, `movies/`, `music/`, `now/`, `projects/`, `travel/`,
+`vibes/`). Only notes placed in that `publish/` folder are ever read — nothing else in the
+vault is touched.
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+To publish a note:
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+1. Write it anywhere in the vault, then move (or copy) it into the matching
+   `publish/<collection>/` folder once it's ready to go live. Frontmatter must match the
+   schema for that collection in `src/content.config.ts`.
+2. Run `npm run sync-vault` (or leave `npm run sync-vault:watch` running while you write) to
+   mirror it into `content/<collection>/`. Obsidian `[[wikilinks]]` are flattened to plain
+   text and `![[embeds]]` are converted to markdown image syntax, with the referenced image
+   copied alongside the note.
+3. Review the diff in `content/`, then commit and push as usual — the sync script only
+   updates the working tree, it never commits or deploys anything itself.
 
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Deleting a note from the vault's `publish/` folder and re-running the sync removes the
+corresponding file from `content/` too. The script only ever deletes files it previously
+synced (tracked in `scripts/.vault-sync-manifest.json`, gitignored), so hand-written content
+files are never touched by it.
