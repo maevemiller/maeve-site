@@ -1,0 +1,32 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+
+const entries = (await getCollection('sites')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+
+<Layout title="Cool Sites — Maeve">
+  <a href={`${import.meta.env.BASE_URL}lists`} class="label hover:text-fg transition-colors">&larr; Lists</a>
+  <h1 class="title-font text-3xl mt-4 mb-10">Library of Cool Sites</h1>
+  <div class="reveal border-t border-border">
+    {entries.map((entry, i) => (
+      <a
+        href={entry.data.url}
+        target="_blank"
+        rel="noopener"
+        class="group flex flex-col py-6 border-b border-border hover:bg-fg/[0.02] hover:translate-x-1 transition-all -mx-2 px-2"
+      >
+        <div class="flex items-baseline justify-between gap-4">
+          <div class="flex items-baseline gap-3">
+            <span class="idx">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="display text-lg group-hover:text-accent transition-colors">{entry.data.title}</h3>
+          </div>
+          <span class="label whitespace-nowrap">visit &rarr;</span>
+        </div>
+        {entry.data.blurb && <p class="text-sm text-muted font-light mt-2 max-w-md ml-8">{entry.data.blurb}</p>}
+      </a>
+    ))}
+  </div>
+</Layout>

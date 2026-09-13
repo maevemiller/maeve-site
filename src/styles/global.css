@@ -56,6 +56,33 @@ body {
 }
 
 @layer utilities {
+  /* temporary rubber-stamp badge while the site is still being built out —
+     fixed so it shows on every page, rotated and dashed to read as a stamp
+     rather than a real UI element; pointer-events: none so it never blocks
+     a click on whatever's underneath it */
+  .wip-stamp {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 30;
+    pointer-events: none;
+    padding: 0.3em 0.6em;
+    border: 1.5px dashed var(--color-accent-2);
+    color: var(--color-accent-2);
+    background: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    transform: rotate(6deg);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .wip-stamp {
+      font-size: 0.55rem;
+      top: 8px;
+      right: 8px;
+      padding: 0.25em 0.5em;
+    }
+  }
+
   .label {
     font-family: var(--font-mono);
     font-size: 0.6875rem;

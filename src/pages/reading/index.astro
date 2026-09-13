@@ -3,23 +3,23 @@ import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import ReviewCard from '../../components/ReviewCard.astro';
 
-const entries = (await getCollection('music')).sort(
+const entries = (await getCollection('reading')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
 ---
 
-<Layout title="Music — Maeve">
+<Layout title="Books & Podcasts — Maeve">
   <a href={`${import.meta.env.BASE_URL}`} class="label hover:text-accent transition-colors">&larr; maeve.world</a>
-  <h1 class="title-font text-3xl mt-4 mb-10">Music</h1>
+  <h1 class="title-font text-3xl mt-4 mb-10">Books &amp; Podcasts</h1>
   <div class="reveal border-t border-border">
     {entries.map((entry, i) => (
       <ReviewCard
-        href={`${import.meta.env.BASE_URL}music/${entry.id}`}
+        href={`${import.meta.env.BASE_URL}reading/${entry.id}`}
         title={entry.data.title}
         rating={entry.data.rating}
         date={entry.data.date}
         blurb={entry.data.blurb}
-        meta={entry.data.artist}
+        meta={[entry.data.creator, entry.data.type === 'podcast' ? 'Podcast' : 'Book'].filter(Boolean).join(' · ')}
         image={entry.data.image}
         index={i}
       />

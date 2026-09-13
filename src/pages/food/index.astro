@@ -9,12 +9,12 @@ const entries = (await getCollection('food')).sort(
 ---
 
 <Layout title="Food — Maeve">
-  <a href="/" class="label hover:text-accent transition-colors">&larr; maeve.world</a>
-  <h1 class="display text-3xl mt-4 mb-10">Food</h1>
+  <a href={`${import.meta.env.BASE_URL}`} class="label hover:text-accent transition-colors">&larr; maeve.world</a>
+  <h1 class="title-font text-3xl mt-4 mb-10">Food</h1>
   <div class="reveal border-t border-border">
     {entries.map((entry, i) => (
       <ReviewCard
-        href={`/food/${entry.id}`}
+        href={`${import.meta.env.BASE_URL}food/${entry.id}`}
         title={entry.data.title}
         rating={entry.data.rating}
         date={entry.data.date}

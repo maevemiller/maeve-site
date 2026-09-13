@@ -16,20 +16,24 @@ const nowUpdated = now?.data.updated.toLocaleDateString('en-US', {
 
 const contact = [
   { name: 'github', href: 'https://github.com/maevemiller', desc: 'code', external: true },
-  { name: 'email', href: 'mailto:you@example.com', desc: 'say hi', external: true },
-  { name: 'twitter', href: 'https://twitter.com/yourhandle', desc: 'shorter thoughts', external: true },
+  { name: 'email', href: 'mailto:maeve.l.miller@gmail.com', desc: 'say hi', external: true },
+  { name: 'twitter', href: 'https://twitter.com/maevelmiller', desc: 'shorter thoughts', external: true },
 ];
 
+const base = import.meta.env.BASE_URL;
+
 const consuming = [
-  { name: 'travel', href: '/travel', desc: 'photos & snippets from trips' },
-  { name: 'movies', href: '/movies', desc: "what I've watched, rated" },
-  { name: 'food', href: '/food', desc: "what I've eaten, rated" },
-  { name: 'music', href: '/music', desc: "what I've listened to, rated" },
+  { name: 'travel', href: `${base}travel`, desc: 'photos & snippets from trips' },
+  { name: 'movies', href: `${base}movies`, desc: "what I've watched, rated" },
+  { name: 'food', href: `${base}food`, desc: "what I've eaten, rated" },
+  { name: 'music', href: `${base}music`, desc: "what I've listened to, rated" },
+  { name: 'reading', href: `${base}reading`, desc: 'books & podcasts, rated' },
 ];
 
 const creating = [
-  { name: 'projects', href: '/projects', desc: "things I've built" },
-  { name: 'writing', href: '/blog', desc: 'essays & notes' },
+  { name: 'projects', href: `${base}projects`, desc: "things I've built" },
+  { name: 'writing', href: `${base}blog`, desc: 'essays & notes' },
+  { name: 'lists', href: `${base}lists`, desc: 'sites & learning lists' },
 ];
 
 // icon grids — built as {row, col} coordinates, not hand-guessed raster art.

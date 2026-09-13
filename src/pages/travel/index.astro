@@ -9,11 +9,11 @@ const entries = (await getCollection('travel')).sort(
 ---
 
 <Layout title="Travel — Maeve">
-  <a href="/" class="label hover:text-accent transition-colors">&larr; maeve.world</a>
-  <h1 class="display text-3xl mt-4 mb-10">Travel</h1>
+  <a href={`${import.meta.env.BASE_URL}`} class="label hover:text-accent transition-colors">&larr; maeve.world</a>
+  <h1 class="title-font text-3xl mt-4 mb-10">Travel</h1>
   <div class="reveal grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
     {entries.map((entry) => (
-      <a href={`/travel/${entry.id}`} class="group block bg-bg">
+      <a href={`${import.meta.env.BASE_URL}travel/${entry.id}`} class="group block bg-bg">
         <div class="aspect-square overflow-hidden bg-card">
           {entry.data.photo && (
             <Image

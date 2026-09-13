@@ -1,0 +1,29 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const base = import.meta.env.BASE_URL;
+
+const sections = [
+  { name: 'sites', href: `${base}lists/sites`, desc: 'a library of cool sites' },
+  { name: 'learning', href: `${base}lists/learning`, desc: "topics & reading lists I'm working through" },
+];
+---
+
+<Layout title="Lists — Maeve">
+  <a href={base} class="label hover:text-accent transition-colors">&larr; maeve.world</a>
+  <h1 class="title-font text-3xl mt-4 mb-10">Lists</h1>
+  <div class="reveal border-t border-border">
+    {sections.map((s, i) => (
+      <a
+        href={s.href}
+        class="group flex flex-col py-6 border-b border-border hover:bg-fg/[0.02] hover:translate-x-1 transition-all -mx-2 px-2"
+      >
+        <div class="flex items-baseline gap-3">
+          <span class="idx">{String(i + 1).padStart(2, '0')}</span>
+          <h3 class="display text-lg group-hover:text-accent transition-colors">{s.name}</h3>
+        </div>
+        <p class="text-sm text-muted font-light mt-2 max-w-md ml-8">{s.desc}</p>
+      </a>
+    ))}
+  </div>
+</Layout>

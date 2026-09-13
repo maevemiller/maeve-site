@@ -14,9 +14,9 @@ const { Content } = await render(entry);
 ---
 
 <Layout title={`${entry.data.title} — Maeve`}>
-  <a href="/movies" class="label hover:text-fg transition-colors">&larr; Movies</a>
+  <a href={`${import.meta.env.BASE_URL}movies`} class="label hover:text-fg transition-colors">&larr; Movies</a>
   <div class="mt-5 flex items-start justify-between gap-4">
-    <h1 class="display text-3xl">{entry.data.title}</h1>
+    <h1 class="title-font text-3xl">{entry.data.title}</h1>
     <RatingStars rating={entry.data.rating} />
   </div>
   <p class="label mt-3">

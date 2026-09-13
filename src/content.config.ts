@@ -85,6 +85,42 @@ const vibes = defineCollection({
   }),
 });
 
+const reading = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './content/reading' }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      type: z.enum(['book', 'podcast']),
+      creator: z.string().optional(),
+      rating: z.number().min(1).max(5),
+      date: z.coerce.date(),
+      tags: z.array(z.string()).default([]),
+      image: image().optional(),
+      blurb: z.string().optional(),
+    }),
+});
+
+const sites = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './content/sites' }),
+  schema: z.object({
+    title: z.string(),
+    url: z.string().url(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()).default([]),
+    blurb: z.string().optional(),
+  }),
+});
+
+const learningLists = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './content/learning-lists' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    items: z.array(z.string()).min(1),
+    order: z.number().default(0),
+  }),
+});
+
 const now = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './content/now' }),
   schema: z.object({
@@ -101,4 +137,4 @@ const now = defineCollection({
   }),
 });
 
-export const collections = { projects, blog, movies, food, music, travel, vibes, now };
+export const collections = { projects, blog, movies, food, music, travel, vibes, now, reading, sites, learningLists };

@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+
+const lists = (await getCollection('learningLists')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<Layout title="Learning Lists — Maeve">
+  <a href={`${import.meta.env.BASE_URL}lists`} class="label hover:text-fg transition-colors">&larr; Lists</a>
+  <h1 class="title-font text-3xl mt-4 mb-10">Learning Lists</h1>
+  <div class="reveal space-y-10">
+    {lists.map((list) => (
+      <div class="border-t border-border pt-6">
+        <h2 class="display text-lg">{list.data.title}</h2>
+        {list.data.description && <p class="text-sm text-muted font-light mt-1">{list.data.description}</p>}
+        <ul class="mt-4 space-y-2 font-mono text-sm">
+          {list.data.items.map((item) => (
+            <li class="flex gap-2">
+              <span class="text-muted">–</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</Layout>

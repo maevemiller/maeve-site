@@ -14,10 +14,10 @@ const { Content } = await render(entry);
 ---
 
 <Layout title={`${entry.data.title} — Maeve`}>
-  <a href="/food" class="label hover:text-fg transition-colors">&larr; Food</a>
+  <a href={`${import.meta.env.BASE_URL}food`} class="label hover:text-fg transition-colors">&larr; Food</a>
   <div class="mt-5 flex items-start justify-between gap-4">
     <div>
-      <h1 class="display text-3xl">{entry.data.title}</h1>
+      <h1 class="title-font text-3xl">{entry.data.title}</h1>
       {entry.data.location && <p class="label mt-2">{entry.data.location}</p>}
     </div>
     <RatingStars rating={entry.data.rating} />
